@@ -31,6 +31,16 @@ namespace Conductor.Domain.Services
             }
         }
 
+        public bool IsRegistered(string workflowId, int version)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeregisterWorkflow(string workflowId, int version)
+        {
+            throw new NotImplementedException();
+        }
+
         public void RegisterWorkflow(WorkflowDefinition definition)
         {
             if (_registry.Any(x => x.Item1 == definition.Id && x.Item2 == definition.Version))

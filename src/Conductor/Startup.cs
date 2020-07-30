@@ -35,11 +35,10 @@ namespace Conductor
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            //System.Reflection.Assembly.GetEntryAssembly().
         }
 
         public IConfiguration Configuration { get; }
-        
+
         public void ConfigureServices(IServiceCollection services)
         {
             var dbConnectionStr = EnvironmentVariables.DbHost;
@@ -56,21 +55,19 @@ namespace Conductor
                 authEnabled = Configuration.GetSection("Auth").GetValue<bool>("Enabled");
             else
                 authEnabled = Convert.ToBoolean(authEnabledStr);
-            
 
-            services.AddMvc(options =>
-            {
-                options.InputFormatters.Add(new YamlRequestBodyInputFormatter());                
-                options.OutputFormatters.Add(new YamlRequestBodyOutputFormatter());
-                options.Filters.Add<RequestObjectFilter>();
-                options.Filters.Add<ExceptionCodeFilter>();
-                options.EnableEndpointRouting = false;                
-            })
-            .AddNewtonsoftJson()
-            .SetCompatibilityVersion(CompatibilityVersion.Latest);
-            
+            services.AddControllers(options =>
+                {
+                    options.InputFormatters.Add(new YamlRequestBodyInputFormatter());
+                    options.OutputFormatters.Add(new YamlRequestBodyOutputFormatter());
+                    options.Filters.Add<RequestObjectFilter>();
+                    options.Filters.Add<ExceptionCodeFilter>();
+                    options.EnableEndpointRouting = false;
+                })
+                .AddNewtonsoftJson();
+
             var authConfig = services.AddAuthentication(options =>
-            {                
+            {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             });
@@ -99,15 +96,12 @@ namespace Conductor
             if (string.IsNullOrEmpty(redisConnectionStr))
                 services.AddSingleton<IClusterBackplane, LocalBackplane>();
             else
-                services.AddSingleton<IClusterBackplane>(sp => new RedisBackplane(redisConnectionStr, "conductor", sp.GetService<IDefinitionRepository>(), sp.GetService<IWorkflowLoader>(), sp.GetService<ILoggerFactory>()));
+                services.AddSingleton<IClusterBackplane>(sp => new RedisBackplane(redisConnectionStr, "conductor", sp.GetService<IDefinitionRepository>(),
+                    sp.GetService<IWorkflowLoader>(), sp.GetService<ILoggerFactory>()));
 
-            var config = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<APIProfile>();
-            });
+            var config = new MapperConfiguration(cfg => { cfg.AddProfile<APIProfile>(); });
 
             services.AddSingleton<IMapper>(x => new Mapper(config));
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -117,25 +111,17 @@ namespace Conductor
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                //app.UseHsts();
-            }
-                        
+
             app.UseAuthentication();
-            //app.UseHttpsRedirection();
-            app.UseMvc(cfg =>
-            {
-              //  cfg.
-            });
+
             app.UseRouting();
-            //app.UseMvcWithDefaultRoute();
 
             app.UseCors(x => x
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
+
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
             var host = app.ApplicationServices.GetService<IWorkflowHost>();
             var defService = app.ApplicationServices.GetService<IDefinitionService>();

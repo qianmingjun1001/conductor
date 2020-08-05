@@ -10,6 +10,7 @@ using Conductor.Domain.Utils;
 using Dapper;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using WorkflowCore.Interface;
 
 namespace Conductor.Domain.Backplane.SqlServer
 {
@@ -25,6 +26,9 @@ namespace Conductor.Domain.Backplane.SqlServer
         private readonly IWorkflowLoader _loader;
 
         [NotNull]
+        private readonly IWorkflowRegistry _workflowRegistry;
+
+        [NotNull]
         private readonly ILogger _logger;
 
         private static readonly string GetLastVersionSql =
@@ -37,11 +41,13 @@ namespace Conductor.Domain.Backplane.SqlServer
             [NotNull] string connectionString,
             [NotNull] IDefinitionRepository definitionRepository,
             [NotNull] IWorkflowLoader loader,
+            [NotNull] IWorkflowRegistry workflowRegistry,
             [NotNull] ILoggerFactory logFactory)
         {
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
             _definitionRepository = definitionRepository;
             _loader = loader;
+            _workflowRegistry = workflowRegistry;
             _logger = logFactory.CreateLogger<SqlServerClusterBackplane>();
         }
 
@@ -69,6 +75,8 @@ namespace Conductor.Domain.Backplane.SqlServer
             var version = GetLastVersion(0);
             while (!_cancellationTokenSource.IsCancellationRequested)
             {
+                _logger.LogInformation("Polling for cluster whether or not change");
+
                 //10s 后再次轮询
                 await Task.Delay(10 * 1000);
 
@@ -83,6 +91,11 @@ namespace Conductor.Domain.Backplane.SqlServer
                             var definition = _definitionRepository.Find(evt.DefinitionId, evt.Version);
                             if (definition != null)
                             {
+                                if (_workflowRegistry.IsRegistered(evt.DefinitionId, evt.Version))
+                                {
+                                    _workflowRegistry.DeregisterWorkflow(evt.DefinitionId, evt.Version);
+                                }
+
                                 _loader.LoadDefinition(definition);
                             }
                         }

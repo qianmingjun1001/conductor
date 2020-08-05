@@ -72,6 +72,20 @@ namespace Conductor.Storage.SqlServer.Services
             }
         }
 
+        public async Task<FlowDefinition> GetFirstOrDefault(Expression<Func<FlowDefinition, bool>> predicate = null)
+        {
+            using (var context = ConstructDbContext())
+            {
+                IQueryable<FlowDefinition> queryable = context.FlowDefinitions;
+                if (predicate != null)
+                {
+                    queryable = queryable.Where(predicate);
+                }
+
+                return await queryable.FirstOrDefaultAsync();
+            }
+        }
+
         public async Task<List<FlowDefinition>> GetListAsync(Expression<Func<FlowDefinition, bool>> predicate = null)
         {
             using (var context = ConstructDbContext())

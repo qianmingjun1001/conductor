@@ -34,6 +34,13 @@ namespace Conductor.Domain.Interfaces
         Task<TEntity> GetAsync(Guid id);
 
         /// <summary>
+        /// 获取第一个，如果获取不到返回 null
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        Task<TEntity> GetFirstOrDefault(Expression<Func<TEntity, bool>> predicate = null);
+
+        /// <summary>
         /// 获取实体列表
         /// </summary>
         /// <param name="predicate"></param>

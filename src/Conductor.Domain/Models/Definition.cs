@@ -20,6 +20,7 @@ namespace Conductor.Domain.Models
         /// <summary>
         /// 定义版本
         /// </summary>
+        [Required]
         [Range(1, int.MaxValue)]
         public int Version { get; set; }
 

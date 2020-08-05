@@ -42,5 +42,13 @@ namespace Conductor.Domain.Interfaces
         /// </summary>
         /// <returns></returns>
         Task LoadDefinitionsFromStorage();
+
+        /// <summary>
+        /// 通过定义 id 和版本获取工作流定义
+        /// </summary>
+        /// <param name="definitionId"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        Task<FlowDefinition> GetFlowByIdAndVersion(string definitionId, int? version = null);
     }
 }

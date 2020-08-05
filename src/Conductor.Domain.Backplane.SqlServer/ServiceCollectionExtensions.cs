@@ -3,6 +3,7 @@ using Conductor.Domain.Interfaces;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using WorkflowCore.Interface;
 
 namespace Conductor.Domain.Backplane.SqlServer
 {
@@ -17,6 +18,7 @@ namespace Conductor.Domain.Backplane.SqlServer
                     connectionString,
                     p.GetRequiredService<IDefinitionRepository>(),
                     p.GetRequiredService<IWorkflowLoader>(),
+                    p.GetRequiredService<IWorkflowRegistry>(),
                     p.GetRequiredService<ILoggerFactory>())
             );
         }

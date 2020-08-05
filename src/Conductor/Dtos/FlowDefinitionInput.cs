@@ -43,9 +43,9 @@ namespace Conductor.Dtos
                 FlowId = FlowId,
                 FlowName = FlowName,
                 Definition = JsonUtils.Serialize(Definition),
-                DefinitionId = Definition?.Id,
-                DefinitionVersion = Definition?.Version ?? 0,
-                Description = Definition?.Description,
+                DefinitionId = Definition.Id,
+                DefinitionVersion = Definition.Version,
+                Description = Definition.Description,
                 EntryPoint = JsonUtils.Serialize(EntryPoint),
                 EntryPointPath = EntryPoint?.Path
             };

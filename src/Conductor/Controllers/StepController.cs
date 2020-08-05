@@ -13,10 +13,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conductor.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class StepController : ControllerBase
+    // [Route("api/[controller]")]
+    // [ApiController]
+    // [Authorize]
+    [NonController]
+    public class StepController : Controller
     {
         private readonly ICustomStepService _service;
 

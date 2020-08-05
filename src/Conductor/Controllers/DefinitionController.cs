@@ -11,8 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conductor.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
+    // [Route("api/[controller]")]
+    // [ApiController]
+    [NonController]
     public class DefinitionController : ControllerBase
     {
         private readonly IDefinitionService _service;

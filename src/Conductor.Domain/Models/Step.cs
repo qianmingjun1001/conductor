@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Dynamic;
 using System.Text;
 using Newtonsoft.Json.Linq;
@@ -7,12 +8,18 @@ using WorkflowCore.Models;
 
 namespace Conductor.Domain.Models
 {
-    public class Step
+    /// <summary>
+    /// 步骤
+    /// </summary>
+    public class Step : BaseStepDescription
     {
+        [Required]
         public string StepType { get; set; }
 
+        [Required]
         public string Id { get; set; }
 
+        [Required]
         public string Name { get; set; }
 
         public string CancelCondition { get; set; }
@@ -34,6 +41,5 @@ namespace Conductor.Domain.Models
         public Dictionary<string, string> Outputs { get; set; } = new Dictionary<string, string>();
 
         public Dictionary<string, string> SelectNextStep { get; set; } = new Dictionary<string, string>();
-        
     }
 }

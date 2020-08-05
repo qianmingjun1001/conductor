@@ -9,6 +9,14 @@
     <StartupObject>Conductor.Program</StartupObject>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DocumentationFile>bin\Debug\Conductor.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DocumentationFile>bin\Release\Conductor.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="Dockerfile" />
   </ItemGroup>
@@ -19,15 +27,21 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="3.1.6" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.6" />
+    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.5.1" />
     <PackageReference Include="WorkflowCore" Version="3.1.6" />
-    <PackageReference Include="WorkflowCore.Providers.Redis" Version="3.0.1" />
+    <PackageReference Include="WorkflowCore.LockProviders.SqlServer" Version="2.0.0" />
+    <PackageReference Include="WorkflowCore.Persistence.SqlServer" Version="3.1.0" />
+    <PackageReference Include="WorkflowCore.QueueProviders.RabbitMQ" Version="2.0.0" />
+    <PackageReference Include="WorkflowCore.QueueProviders.SqlServer" Version="1.0.3-alpha" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Conductor.Domain.Scripting\Conductor.Domain.Scripting.csproj" />
+    <ProjectReference Include="..\Conductor.Domain.Backplane.SqlServer\Conductor.Domain.Backplane.SqlServer.csproj" />
+    <ProjectReference Include="..\Conductor.Domain.Scripting.ExpressionTree\Conductor.Domain.Scripting.ExpressionTree.csproj" />
     <ProjectReference Include="..\Conductor.Domain\Conductor.Domain.csproj" />
     <ProjectReference Include="..\Conductor.Steps\Conductor.Steps.csproj" />
-    <ProjectReference Include="..\Conductor.Storage\Conductor.Storage.csproj" />
+    <ProjectReference Include="..\Conductor.Storage.SqlServer\Conductor.Storage.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

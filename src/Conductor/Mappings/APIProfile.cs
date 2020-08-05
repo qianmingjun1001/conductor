@@ -3,6 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Conductor.Domain.Entities;
+using Conductor.Domain.Models;
+using Conductor.Domain.Utils;
+using Conductor.Dtos;
 
 namespace Conductor.Mappings
 {
@@ -25,6 +29,11 @@ namespace Conductor.Mappings
                 .ForMember(dest => dest.TokenExpiry, opt => opt.MapFrom(src => src.TokenExpiry))
                 .ForMember(dest => dest.Parameters, opt => opt.MapFrom(src => src.Parameters))
                 .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.ActivityName));
+
+            //映射
+            CreateMap<FlowDefinition, FlowDefinitionOutput>()
+                .ForMember(dest => dest.Definition, opt => opt.MapFrom(src => JsonUtils.Deserialize<Definition>(src.Definition)))
+                .ForMember(dest => dest.EntryPoint, opt => opt.MapFrom(src => JsonUtils.Deserialize<EntryPoint>(src.EntryPoint)));
         }
     }
 }

@@ -14,7 +14,6 @@ namespace Conductor.Steps
 {
     public class HttpRequest : StepBodyAsync
     {
-
         public string BaseUrl { get; set; }
         public string Resource { get; set; }
 

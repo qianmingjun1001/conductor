@@ -15,9 +15,10 @@ using WorkflowCore.Interface;
 
 namespace Conductor.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ActivityController : ControllerBase
+    // [Route("api/[controller]")]
+    // [ApiController]
+    [NonController]
+    public class ActivityController : Controller
     {
         private readonly IActivityController _activityService;
         private readonly IMapper _mapper;

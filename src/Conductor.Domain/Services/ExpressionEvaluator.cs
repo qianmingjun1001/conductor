@@ -29,6 +29,11 @@ namespace Conductor.Domain.Services
             });
             return resolvedValue;
         }
+        
+        public object EvaluateExpression(string sourceExpr, object pData, object pStep)
+        {
+            throw new NotImplementedException();
+        }
 
         public object EvaluateExpression(string sourceExpr, IDictionary<string, object> parameteters)
         {

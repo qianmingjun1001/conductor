@@ -14,9 +14,10 @@ using WorkflowCore.Interface;
 
 namespace Conductor.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class EventController : ControllerBase
+    // [Route("api/[controller]")]
+    // [ApiController]
+    [NonController]
+    public class EventController : Controller
     {
         private readonly IWorkflowController _workflowController;
 

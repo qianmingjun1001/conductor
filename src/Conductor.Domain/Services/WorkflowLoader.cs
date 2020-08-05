@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +9,9 @@ using System.Reflection;
 using System.Text;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
+using Conductor.Domain.Utils;
+using JetBrains.Annotations;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WorkflowCore.Exceptions;
 using WorkflowCore.Interface;
@@ -39,8 +43,8 @@ namespace Conductor.Domain.Services
 
         private WorkflowDefinition Convert(Definition source)
         {
-            var dataType = typeof(ExpandoObject);
-            
+            var dataType = typeof(WorkflowContext);
+
             var result = new WorkflowDefinition
             {
                 Id = source.Id,
@@ -83,14 +87,7 @@ namespace Conductor.Domain.Services
 
                 if (!string.IsNullOrEmpty(nextStep.CancelCondition))
                 {
-                    Func<ExpandoObject, bool> cancelFunc = (data) => _scriptHost.EvaluateExpression<bool>(nextStep.CancelCondition, new Dictionary<string, object>()
-                    {
-                        ["data"] = data,
-                        ["environment"] = Environment.GetEnvironmentVariables()
-                    });
-
-                    Expression<Func<ExpandoObject, bool>> cancelExpr = (data) => cancelFunc(data);
-                    targetStep.CancelCondition = cancelExpr;
+                    targetStep.CancelCondition = _scriptHost.EvaluateExpression(nextStep.CancelCondition, new Dictionary<string, object>());
                 }
 
                 targetStep.Id = i;
@@ -178,7 +175,18 @@ namespace Conductor.Domain.Services
         {
             foreach (var input in source.Inputs)
             {
-                var stepProperty = stepType.GetProperty(input.Key);
+                var stepProperty = FindStepProperty(stepType, input.Key);
+                if (stepProperty == null)
+                {
+                    throw new ArgumentException($"Unknown property for input {input.Key} on {source.Id}");
+                }
+
+                if (input.Value is string)
+                {
+                    var acn = BuildScalarInputAction(input, stepProperty);
+                    step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
+                    continue;
+                }
 
                 if ((input.Value is IDictionary<string, object>) || (input.Value is IDictionary<object, object>))
                 {
@@ -186,59 +194,57 @@ namespace Conductor.Domain.Services
                     step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
                     continue;
                 }
-                else
-                {
-                    var acn = BuildScalarInputAction(input, stepProperty);
-                    step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
-                    continue;
-                }
 
                 throw new ArgumentException($"Unknown type for input {input.Key} on {source.Id}");
             }
         }
-        
+
         private void AttachOutputs(Step source, Type dataType, Type stepType, WorkflowStep step)
         {
             foreach (var output in source.Outputs)
             {
                 Action<IStepBody, object> acn = (pStep, pData) =>
                 {
-                    object resolvedValue = _scriptHost.EvaluateExpression(output.Value, new Dictionary<string, object>()
-                    {
-                        ["step"] = pStep,
-                        ["data"] = pData
-                    });
-                    (pData as IDictionary<string, object>)[output.Key] = resolvedValue;
+                    object resolvedValue = _expressionEvaluator.EvaluateExpression(output.Value, pData, pStep);
+                    (pData as WorkflowContext).Outputs[output.Key] = resolvedValue;
                 };
 
                 step.Outputs.Add(new ActionParameter<IStepBody, object>(acn));
             }
         }
-        
+
         private void AttachOutcomes(Step source, Type dataType, WorkflowStep step)
-        {            
+        {
             if (!string.IsNullOrEmpty(source.NextStepId))
-                step.Outcomes.Add(new ValueOutcome() { ExternalNextStepId = $"{source.NextStepId}" });
-            
+                step.Outcomes.Add(new ValueOutcome() {ExternalNextStepId = $"{source.NextStepId}"});
+
             foreach (var nextStep in source.SelectNextStep)
             {
-                Expression<Func<ExpandoObject, object, bool>> sourceExpr = (data, outcome) => _expressionEvaluator.EvaluateOutcomeExpression(nextStep.Value, data, outcome);
-                step.Outcomes.Add(new ExpressionOutcome<ExpandoObject>(sourceExpr)
+                Expression<Func<WorkflowContext, object, bool>> sourceExpr = (data, outcome) => _expressionEvaluator.EvaluateOutcomeExpression(nextStep.Value, data, outcome);
+                step.Outcomes.Add(new ExpressionOutcome<WorkflowContext>(sourceExpr)
                 {
                     ExternalNextStepId = $"{nextStep.Key}"
                 });
             }
         }
-              
+
+        private PropertyInfo FindStepProperty(Type stepType, string propertyName)
+        {
+            var stepProperty = stepType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.IgnoreCase);
+            return stepProperty;
+        }
+
         private Type FindType(string name)
         {
             name = name.Trim();
-            var result = Type.GetType($"WorkflowCore.Primitives.{name}, WorkflowCore", false, true);
+            var result = Type.GetType(name, false, true);
 
-            if (result != null)
-                return result;
-
-            result = Type.GetType($"Conductor.Steps.{name}, Conductor.Steps", false, true);
+            // var result = Type.GetType($"WorkflowCore.Primitives.{name}, WorkflowCore", false, true);
+            //
+            // if (result != null)
+            //     return result;
+            //
+            // result = Type.GetType($"Conductor.Steps.{name}, Conductor.Steps", false, true);
 
             if (result != null)
                 return result;
@@ -252,7 +258,7 @@ namespace Conductor.Domain.Services
         private Action<IStepBody, object, IStepExecutionContext> BuildScalarInputAction(KeyValuePair<string, object> input, PropertyInfo stepProperty)
         {
             var sourceExpr = System.Convert.ToString(input.Value);
-            
+
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
                 var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);
@@ -264,7 +270,7 @@ namespace Conductor.Domain.Services
                 }
 
                 if (stepProperty.PropertyType.IsEnum)
-                    stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
+                    stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string) resolvedValue, true));
                 else
                 {
                     if (stepProperty.PropertyType == typeof(object))
@@ -277,13 +283,13 @@ namespace Conductor.Domain.Services
                             stepProperty.SetValue(pStep, resolvedValue);
                         else
                             stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
-                    }                    
+                    }
                 }
             }
+
             return acn;
         }
 
-        
 
         private Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, PropertyInfo stepProperty)
         {
@@ -301,7 +307,7 @@ namespace Conductor.Domain.Services
                         if (prop.Name.StartsWith("@"))
                         {
                             var sourceExpr = prop.Value.ToString();
-                            var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);;
+                            var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);
                             subobj.Remove(prop.Name);
                             subobj.Add(prop.Name.TrimStart('@'), JToken.FromObject(resolvedValue));
                         }
@@ -311,10 +317,24 @@ namespace Conductor.Domain.Services
                         stack.Push(child);
                 }
 
-                stepProperty.SetValue(pStep, destObj.ToObject<ExpandoObject>());
+                if (IsComplexType(stepProperty.PropertyType))
+                {
+                    stepProperty.SetValue(pStep, destObj.DeserializeToObject(stepProperty.PropertyType));
+                }
+                else
+                {
+                    stepProperty.SetValue(pStep, destObj);
+                }
             }
+
             return acn;
         }
-        
+
+        private static bool IsComplexType([NotNull] Type type)
+        {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+
+            return !TypeDescriptor.GetConverter(type).CanConvertFrom(typeof(string));
+        }
     }
 }

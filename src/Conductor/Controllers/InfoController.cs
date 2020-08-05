@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conductor.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]    
-    public class InfoController : ControllerBase
+    [ApiController]
+    public class InfoController : Controller
     {
         [HttpGet]        
         public ActionResult<DiagnosticInfo> Get()

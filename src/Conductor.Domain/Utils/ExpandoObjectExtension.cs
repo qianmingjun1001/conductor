@@ -39,10 +39,10 @@ namespace Conductor.Domain.Utils
                 }
                 else if (!(value is string) && value is IEnumerable items)
                 {
-                    var elementType = valueType.GetElementType() ?? valueType.GetGenericArguments()[0];
-                    if (elementType == typeof(ExpandoObject))
+                    if (AllIsExpandoObject(items))
                     {
-                        Type newElementType = null;
+                        Type elementType = null;
+                        //这里默认数组下面的 ExpandoObject 的格式都是一致的，如果不一致这里会报错
                         var list = new List<DynamicClass>();
                         foreach (var expando in items.Cast<ExpandoObject>())
                         {
@@ -53,13 +53,13 @@ namespace Conductor.Domain.Utils
                             }
 
                             var (dynamicType, dynamicClass) = GenerateDynamicClass(expando);
-                            newElementType = newElementType ?? dynamicType;
+                            elementType = elementType ?? dynamicType;
                             list.Add(dynamicClass);
                         }
 
-                        props.Add(new DynamicProperty(key, typeof(List<>).MakeGenericType(newElementType)));
+                        props.Add(new DynamicProperty(key, typeof(List<>).MakeGenericType(elementType)));
 
-                        var castMethod = typeof(ExpandoObjectExtension).GetMethod(nameof(Cast)).MakeGenericMethod(typeof(DynamicClass), newElementType);
+                        var castMethod = typeof(ExpandoObjectExtension).GetMethod(nameof(Cast)).MakeGenericMethod(typeof(DynamicClass), elementType);
                         propValues.Add(key, castMethod.Invoke(null, new object[] {list}));
                     }
                     else
@@ -83,6 +83,19 @@ namespace Conductor.Domain.Utils
             }
 
             return (type, clazz);
+        }
+
+        private static bool AllIsExpandoObject(IEnumerable source)
+        {
+            foreach (var item in source)
+            {
+                if (item != null && item.GetType() != typeof(ExpandoObject))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static List<TResult> Cast<TSource, TResult>(IEnumerable<TSource> sources)

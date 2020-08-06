@@ -33,6 +33,11 @@ namespace Conductor.Domain.Scripting
             return source.Execute(scope);
         }
 
+        public dynamic EvaluateExpression(string expression, object pData, IDictionary<string, object> inputs)
+        {
+            return EvaluateExpression(expression, inputs);
+        }
+
         public T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs)
         {
             return EvaluateExpression(expression, inputs);

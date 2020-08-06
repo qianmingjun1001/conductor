@@ -21,7 +21,7 @@ namespace Conductor.Domain.ReplacedServices
 
         public object EvaluateExpression(string sourceExpr, object pData, IStepExecutionContext pContext)
         {
-            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>()
+            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, pData, new Dictionary<string, object>()
             {
                 ["context"] = typeof(IStepExecutionContext)
             });
@@ -33,7 +33,7 @@ namespace Conductor.Domain.ReplacedServices
 
         public object EvaluateExpression(string sourceExpr, object pData, object pStep)
         {
-            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>()
+            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, pData, new Dictionary<string, object>()
             {
                 ["step"] = pStep.GetType()
             });
@@ -56,7 +56,7 @@ namespace Conductor.Domain.ReplacedServices
                 inputs["outcome"] = outcome.GetType();
             }
 
-            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, inputs);
+            var lambda = (LambdaExpression) _scriptHost.EvaluateExpression(sourceExpr, pData, inputs);
 
             var data = (WorkflowContext) pData;
 

@@ -17,7 +17,6 @@ namespace Conductor.Domain.Utils
         static JsonUtils()
         {
             _settings = new JsonSerializerSettings {DateFormatString = "yyyy-MM-dd HH:mm:ss", ContractResolver = new CamelCasePropertyNamesContractResolver()};
-            _settings.Converters.Add(new AnyObjectConverter());
         }
 
         /// <summary>

@@ -18,13 +18,13 @@ namespace Conductor.Domain.Scripting.ExpressionTreeTests
         [SetUp]
         public void SetUp()
         {
-            dynamic payload = new AnyObject();
-            payload.payload1 = "p1";
-            payload.payload2 = "p2";
+            dynamic any = new ExpandoObject();
+            any.payload1 = "p1";
+            any.payload2 = "p2";
 
             _workflowContext = new WorkflowContext()
             {
-                Payload = payload,
+                Any = any,
                 Attributes = new Dictionary<string, string>()
                 {
                     ["attr1"] = "a1",
@@ -44,7 +44,7 @@ namespace Conductor.Domain.Scripting.ExpressionTreeTests
         public void EvaluateExpressionTest()
         {
             object o = _expressionEvaluator.EvaluateExpression(
-                "data.Payload[\"payload1\"].ToString() + payload[\"payload2\"].ToString() + data.Attributes[\"attr1\"] + attributes[\"attr2\"] + data.Variables[\"var1\"] + vars[\"var2\"]",
+                "data.Payload.payload1 + payload.payload2 + data.Attributes[\"attr1\"] + attributes[\"attr2\"] + data.Variables[\"var1\"] + vars[\"var2\"]",
                 _workflowContext,
                 new StepExecutionContext());
             Assert.AreEqual("p1p2a1a2v1v2", o);

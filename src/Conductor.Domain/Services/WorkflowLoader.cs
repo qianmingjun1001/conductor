@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -87,7 +88,9 @@ namespace Conductor.Domain.Services
 
                 if (!string.IsNullOrEmpty(nextStep.CancelCondition))
                 {
-                    targetStep.CancelCondition = _scriptHost.EvaluateExpression(nextStep.CancelCondition, new Dictionary<string, object>());
+                    var dataParameter = Expression.Parameter(dataType, "data");
+                    var cancelExpr = DynamicExpressionParser.ParseLambda(new[] {dataParameter}, typeof(bool), nextStep.CancelCondition);
+                    targetStep.CancelCondition = cancelExpr;
                 }
 
                 targetStep.Id = i;

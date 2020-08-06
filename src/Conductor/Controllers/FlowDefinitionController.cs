@@ -45,7 +45,7 @@ namespace Conductor.Controllers
         /// <param name="flowId"></param>
         /// <returns></returns>
         [HttpGet("{flowId}")]
-        public async Task<ApiResult<FlowDefinitionOutput>> Get([FromQuery] Guid flowId)
+        public async Task<ApiResult<FlowDefinitionOutput>> Get(Guid flowId)
         {
             if (flowId == Guid.Empty)
             {

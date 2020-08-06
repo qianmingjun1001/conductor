@@ -124,6 +124,9 @@ namespace Conductor.Domain.Backplane.SqlServer
             _cancellationTokenSource.Cancel();
             _task.Wait();
             _task = null;
+            
+            _logger.LogInformation("SqlServer Backplane stopped");
+
             return Task.CompletedTask;
         }
 

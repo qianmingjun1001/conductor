@@ -62,11 +62,11 @@ namespace Conductor.Controllers
         /// <returns></returns>
         [HttpPost("{id}")]
         [Authorize(Policy = Policies.Controller)]
-        public async Task<ApiResult<WorkflowInstance>> Post(string id, [FromBody] WorkflowContext data)
+        public async Task<ApiResult<WorkflowInstance>> Post(string id, [FromBody] WorkflowContextDto data)
         {
             await CheckWorkflowDefinition(id);
 
-            var instanceId = await _workflowController.StartWorkflow(id, data);
+            var instanceId = await _workflowController.StartWorkflow(id, data.ToWorkflowContext());
             var result = await _persistenceProvider.GetWorkflowInstance(instanceId);
 
             return ApiResult<WorkflowInstance>.True(_mapper.Map<WorkflowInstance>(result));
@@ -81,11 +81,11 @@ namespace Conductor.Controllers
         /// <returns></returns>
         [HttpPost("{id}/{version}")]
         [Authorize(Policy = Policies.Controller)]
-        public async Task<ApiResult<WorkflowInstance>> Post(string id, int version, [FromBody] WorkflowContext data)
+        public async Task<ApiResult<WorkflowInstance>> Post(string id, int version, [FromBody] WorkflowContextDto data)
         {
             await CheckWorkflowDefinition(id, version);
 
-            var instanceId = await _workflowController.StartWorkflow(id, version, data);
+            var instanceId = await _workflowController.StartWorkflow(id, version, data.ToWorkflowContext());
             var result = await _persistenceProvider.GetWorkflowInstance(instanceId);
 
             return ApiResult<WorkflowInstance>.True(_mapper.Map<WorkflowInstance>(result));

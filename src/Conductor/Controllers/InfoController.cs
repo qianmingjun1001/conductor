@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conductor.Controllers
 {
+    [Route("/")]
     [Route("api/[controller]")]
     [ApiController]
     public class InfoController : Controller

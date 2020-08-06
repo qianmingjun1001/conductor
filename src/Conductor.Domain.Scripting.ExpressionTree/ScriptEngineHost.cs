@@ -21,33 +21,25 @@ namespace Conductor.Domain.Scripting.ExpressionTree
 
         public dynamic EvaluateExpression([NotNull] string expression, [NotNull] IDictionary<string, object> inputs)
         {
+            throw new NotImplementedException();
+        }
+
+        public dynamic EvaluateExpression(string expression, object pData, IDictionary<string, object> inputs)
+        {
             if (expression == null) throw new ArgumentNullException(nameof(expression));
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
 
-            var parameters = new List<ParameterExpression>();
-            
-            //data, payload, attributes, vars
+            //data, payload, attributes, vars, environment
             var dataType = typeof(WorkflowContext);
-            var attribute = dataType.GetCustomAttribute<KeywordsAttribute>();
-            if (attribute != null)
+            var data = (WorkflowContext) pData;
+            var parameters = new List<ParameterExpression>()
             {
-                var dataParameter = Expression.Parameter(dataType, attribute.Name);
-                parameters.Add(dataParameter);
-            }
-
-            foreach (var property in dataType.GetProperties())
-            {
-                attribute = property.GetCustomAttribute<KeywordsAttribute>();
-                if (attribute != null)
-                {
-                    var propertyParameter = Expression.Parameter(property.PropertyType, attribute.Name);
-                    parameters.Add(propertyParameter);
-                }
-            }
-
-            //environment
-            parameters.Add(Expression.Parameter(typeof(IDictionary), "environment"));
-
+                Expression.Parameter(dataType, "data"),
+                Expression.Parameter(data.GetPayloadType(), "payload"),
+                Expression.Parameter(typeof(Dictionary<string, string>), "attributes"),
+                Expression.Parameter(typeof(Dictionary<string, string>), "vars"),
+                Expression.Parameter(typeof(IDictionary), "environment")
+            };
 
             //customize
             //[parameter, type]

@@ -92,13 +92,13 @@ namespace Conductor
             services.AddWorkflow(options =>
             {
                 //工作流程存储
-                options.UseSqlServer(Configuration["SqlServerConnectionString"], false, true);
+                options.UseSqlServer(Configuration["SqlServerConnectionString"], true, true);
 
                 //分布式锁
                 options.UseSqlServerLocking(Configuration["SqlServerConnectionString"]);
 
                 //分布式队列
-                options.UseSqlServerBroker(Configuration["SqlServerConnectionString"], false, true);
+                options.UseSqlServerBroker(Configuration["SqlServerConnectionString"], true, true);
             });
             services.ConfigureDomainServices();
             services.ConfigureExpressionTreeScripting();

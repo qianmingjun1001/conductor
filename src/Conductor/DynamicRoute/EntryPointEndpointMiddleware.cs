@@ -74,7 +74,14 @@ namespace Conductor.DynamicRoute
             {
                 using (var reader = new StreamReader(request.Body, Encoding.UTF8))
                 {
-                    return JsonUtils.Deserialize<WorkflowContext>(await reader.ReadToEndAsync());
+                    var context = JsonUtils.Deserialize<WorkflowContext>(await reader.ReadToEndAsync());
+                    var payload = context.Payload;
+                    if (payload != null)
+                    {
+                        context.PayloadClass = payload.ToDynamicClass();
+                    }
+
+                    return context;
                 }
             }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Text;
 using Conductor.Domain.Models;
+using Conductor.Domain.Utils;
 
 namespace Conductor.Dtos
 {
@@ -28,12 +29,24 @@ namespace Conductor.Dtos
 
         public WorkflowContext ToWorkflowContext()
         {
-            return new WorkflowContext()
+            var context = new WorkflowContext();
+            if (Payload != null)
             {
-                Payload = Payload,
-                Attributes = Attributes,
-                Variables = Variables
-            };
+                context.Payload = Payload;
+                context.PayloadClass = Payload.ToDynamicClass();
+            }
+
+            if (Attributes != null)
+            {
+                context.Attributes = Attributes;
+            }
+
+            if (Attributes != null)
+            {
+                context.Variables = Variables;
+            }
+
+            return context;
         }
     }
 }

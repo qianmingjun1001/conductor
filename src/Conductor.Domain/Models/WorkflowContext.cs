@@ -13,18 +13,15 @@ namespace Conductor.Domain.Models
     /// </summary>
     public class WorkflowContext
     {
-        private DynamicClass _internalPayloadClass;
-
         /// <summary>
-        /// 任意类型
+        /// Payload
         /// </summary>
-        public ExpandoObject Payload { get; set; } = new ExpandoObject();
+        public ExpandoObject Payload { get; set; }
 
         /// <summary>
         /// Payload 真实类型
         /// </summary>
-        [JsonIgnore]
-        public DynamicClass PayloadClass => _internalPayloadClass = _internalPayloadClass ?? Payload.ToDynamicClass();
+        public DynamicClass PayloadClass { get; set; }
 
         /// <summary>
         /// 属性

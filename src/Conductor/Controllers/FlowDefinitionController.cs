@@ -6,6 +6,7 @@ using AutoMapper;
 using Conductor.Domain.Entities;
 using Conductor.Domain.Interfaces;
 using Conductor.Dtos;
+using Conductor.DynamicRoute;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,16 +16,18 @@ namespace Conductor.Controllers
     [ApiController]
     public class FlowDefinitionController : Controller
     {
-        [NotNull]
         private readonly IFlowDefinitionService _flowDefinitionService;
-
-        [NotNull]
         private readonly IMapper _mapper;
+        private readonly EntryPointRouteRegistry _entryPointRouteRegistry;
 
-        public FlowDefinitionController([NotNull] IFlowDefinitionService flowDefinitionService, [NotNull] IMapper mapper)
+        public FlowDefinitionController(
+            [NotNull] IFlowDefinitionService flowDefinitionService,
+            [NotNull] IMapper mapper,
+            [NotNull] EntryPointRouteRegistry entryPointRouteRegistry)
         {
             _flowDefinitionService = flowDefinitionService;
             _mapper = mapper;
+            _entryPointRouteRegistry = entryPointRouteRegistry;
         }
 
         /// <summary>
@@ -36,6 +39,13 @@ namespace Conductor.Controllers
         public async Task<ApiResult<Guid>> Post([NotNull] [FromBody] FlowDefinitionInput input)
         {
             var flowId = await _flowDefinitionService.SaveFlow(input.ToFlowDefinition());
+
+            var path = input.EntryPoint?.Path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                _entryPointRouteRegistry.RegisterRoute(path);
+            }
+
             return ApiResult<Guid>.True(flowId);
         }
 

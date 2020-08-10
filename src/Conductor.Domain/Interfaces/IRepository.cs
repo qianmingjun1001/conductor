@@ -44,8 +44,9 @@ namespace Conductor.Domain.Interfaces
         /// 获取实体列表
         /// </summary>
         /// <param name="predicate"></param>
+        /// <param name="select"></param>
         /// <returns></returns>
-        Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate = null);
+        Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate = null, Expression<Func<FlowDefinition, object>> select = null);
 
         /// <summary>
         /// 获取分页实体列表

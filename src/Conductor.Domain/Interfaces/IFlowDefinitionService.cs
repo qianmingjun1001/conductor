@@ -50,5 +50,18 @@ namespace Conductor.Domain.Interfaces
         /// <param name="version"></param>
         /// <returns></returns>
         Task<FlowDefinition> GetFlowByIdAndVersion(string definitionId, int? version = null);
+
+        /// <summary>
+        /// 通过入口点路径获取工作流定义的id和版本
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        Task<List<(string id, int version)>> GetFlowDefinitionIdAndVersionByEntryPointPath(string path);
+
+        /// <summary>
+        /// 获取所有的入口点路径
+        /// </summary>
+        /// <returns></returns>
+        Task<List<string>> GetAllEntryPointPath();
     }
 }

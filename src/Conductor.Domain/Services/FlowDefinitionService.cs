@@ -93,5 +93,26 @@ namespace Conductor.Domain.Services
 
             return await _flowDefinitionRepository.GetFirstOrDefault(predicate);
         }
+
+        public async Task<List<(string id, int version)>> GetFlowDefinitionIdAndVersionByEntryPointPath(string path)
+        {
+            return (await _flowDefinitionRepository.GetListAsync(p => p.EntryPointPath == path, p => new {p.DefinitionId, p.DefinitionVersion}))
+                .Select(p => (p.DefinitionId, p.DefinitionVersion))
+                .ToList();
+        }
+
+        public async Task<List<string>> GetAllEntryPointPath()
+        {
+            var list = new List<string>();
+            foreach (var flowDefinition in await _flowDefinitionRepository.GetListAsync(p => p.EntryPointPath.Length > 0, p => new {p.EntryPointPath}))
+            {
+                if (!list.Contains(flowDefinition.EntryPointPath))
+                {
+                    list.Add(flowDefinition.EntryPointPath);
+                }
+            }
+
+            return list;
+        }
     }
 }

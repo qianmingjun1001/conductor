@@ -30,6 +30,7 @@ using Microsoft.IdentityModel.Tokens;
 using Conductor.Auth;
 using Conductor.Domain.Backplane.SqlServer;
 using Conductor.Domain.Scripting.ExpressionTree;
+using Conductor.DynamicRoute;
 using Conductor.Filters;
 using Conductor.Middleware;
 using Conductor.Storage.SqlServer;
@@ -109,6 +110,8 @@ namespace Conductor
             //集群通知底板
             services.UseSqlServerBackplane(Configuration["SqlServerConnectionString"]);
 
+            services.AddEntryPointRoute();
+            
             var config = new MapperConfiguration(cfg => { cfg.AddProfile<APIProfile>(); });
 
             services.AddSingleton<IMapper>(x => new Mapper(config));
@@ -152,8 +155,13 @@ namespace Conductor
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-            
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                //将入口点映射到路由
+                endpoints.MapEntryPoint();
+            });
+
             app.UseWorkflow();
         }
     }

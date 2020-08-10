@@ -13,28 +13,28 @@ namespace Conductor.Domain.Models
     /// </summary>
     public class WorkflowContext
     {
-        private DynamicClass _internalPayLoad;
+        private DynamicClass _internalPayloadClass;
 
         /// <summary>
         /// 任意类型
         /// </summary>
-        public ExpandoObject Any { get; set; }
+        public ExpandoObject Payload { get; set; } = new ExpandoObject();
 
         /// <summary>
         /// Payload 真实类型
         /// </summary>
-        [JsonIgnore] 
-        public DynamicClass Payload => _internalPayLoad = _internalPayLoad ?? Any.ToDynamicClass();
+        [JsonIgnore]
+        public DynamicClass PayloadClass => _internalPayloadClass = _internalPayloadClass ?? Payload.ToDynamicClass();
 
         /// <summary>
         /// 属性
         /// </summary>
-        public Dictionary<string, string> Attributes { get; set; }
+        public Dictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
         /// 变量
         /// </summary>
-        public Dictionary<string, string> Variables { get; set; }
+        public Dictionary<string, string> Variables { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
         /// 存储输出结果
@@ -45,7 +45,7 @@ namespace Conductor.Domain.Models
 
         public Type GetPayloadType()
         {
-            return Any == null ? typeof(DynamicClass) : Payload.GetType();
+            return Payload == null ? typeof(DynamicClass) : PayloadClass.GetType();
         }
     }
 }

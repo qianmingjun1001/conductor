@@ -11,6 +11,7 @@ namespace Conductor.Domain
     {
         public static void ConfigureDomainServices(this IServiceCollection services)
         {
+            services.AddSingleton<ICache, MemoryCache>();
             services.AddSingleton<IDefinitionService, DefinitionService>();
             services.AddSingleton<IWorkflowLoader, WorkflowLoader>();
             // services.AddSingleton<ICustomStepService, CustomStepService>()

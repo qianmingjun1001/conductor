@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,20 +20,10 @@ namespace Conductor.Domain.Backplane.SqlServer
         private readonly Guid _nodeId = Guid.NewGuid();
         private readonly string _connectionString;
 
-        [NotNull]
         private readonly IDefinitionRepository _definitionRepository;
-
-        [NotNull]
         private readonly IWorkflowLoader _loader;
-
-        [NotNull]
         private readonly IWorkflowRegistry _workflowRegistry;
-
-        [NotNull]
         private readonly ILogger _logger;
-
-        private static readonly string GetLastVersionSql =
-            "SELECT top 1 sys_change_version FROM CHANGETABLE(CHANGES dbo.DefinitionCommand, @version) AS ct order by sys_change_version desc";
 
         private CancellationTokenSource _cancellationTokenSource;
         private Task _task;
@@ -85,18 +76,22 @@ namespace Conductor.Domain.Backplane.SqlServer
                 {
                     try
                     {
-                        var evt = GetNewDefinitionCommand();
-                        if (evt != null && evt.Originator != _nodeId)
+                        var commands = GetNewDefinitionCommands(version);
+                        foreach (var command in commands)
                         {
-                            var definition = _definitionRepository.Find(evt.DefinitionId, evt.Version);
-                            if (definition != null)
+                            if (command.Originator != _nodeId)
                             {
-                                if (_workflowRegistry.IsRegistered(evt.DefinitionId, evt.Version))
+                                var definition = _definitionRepository.Find(command.DefinitionId, command.Version);
+                                if (definition != null)
                                 {
-                                    _workflowRegistry.DeregisterWorkflow(evt.DefinitionId, evt.Version);
-                                }
+                                    if (_workflowRegistry.IsRegistered(command.DefinitionId, command.Version))
+                                    {
+                                        _workflowRegistry.DeregisterWorkflow(command.DefinitionId, command.Version);
+                                    }
 
-                                _loader.LoadDefinition(definition);
+                                    _loader.LoadDefinition(definition);
+                                    _logger.LogInformation($"id: {command.DefinitionId}, version: {command.Version} definition loaded");
+                                }
                             }
                         }
 
@@ -110,21 +105,12 @@ namespace Conductor.Domain.Backplane.SqlServer
             }
         }
 
-
-        private int GetLastVersion(int version)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                return connection.QueryFirstOrDefault<int>(GetLastVersionSql, new {version = version == 0 ? 0 : version - 1});
-            }
-        }
-
         public Task Stop()
         {
             _cancellationTokenSource.Cancel();
             _task.Wait();
             _task = null;
-            
+
             _logger.LogInformation("SqlServer Backplane stopped");
 
             return Task.CompletedTask;
@@ -139,22 +125,32 @@ namespace Conductor.Domain.Backplane.SqlServer
                 Version = version
             };
 
-            var first = GetNewDefinitionCommand();
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Execute(
-                    first == null
-                        ? "INSERT INTO dbo.DefinitionCommand(Originator, DefinitionId, Version) VALUES (@Originator, @DefinitionId, @Version)"
-                        : "UPDATE dbo.DefinitionCommand SET Originator=@Originator, DefinitionId=@DefinitionId, Version=@Version", data);
+                    "INSERT INTO dbo.DefinitionCommand(Originator, DefinitionId, Version) VALUES (@Originator, @DefinitionId, @Version)", data);
             }
         }
 
-        private NewDefinitionCommand GetNewDefinitionCommand()
+        private int GetLastVersion(int version)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                return connection.QueryFirstOrDefault<NewDefinitionCommand>(
-                    "SELECT TOP 1 Originator, DefinitionId, Version FROM dbo.DefinitionCommand");
+                return connection.QueryFirstOrDefault<int>(
+                    "SELECT top 1 sys_change_version FROM CHANGETABLE(CHANGES dbo.DefinitionCommand, @version) AS ct order by sys_change_version desc",
+                    new {version = version == 0 ? 0 : version - 1});
+            }
+        }
+
+        private List<NewDefinitionCommand> GetNewDefinitionCommands(int version)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                return connection.Query<NewDefinitionCommand>(
+                        @"SELECT dc.Originator, dc.DefinitionId, dc.Version FROM dbo.DefinitionCommand AS dc 
+                            RIGHT JOIN CHANGETABLE(CHANGES dbo.DefinitionCommand, @version) AS ct ON ct.ID = dc.ID",
+                        new {version})
+                    .ToList();
             }
         }
 
@@ -181,7 +177,7 @@ namespace Conductor.Domain.Backplane.SqlServer
         private void EnsureTableCtOpened()
         {
             var sql = @"IF NOT EXISTS ( SELECT OBJECT_NAME ( object_id ) TableName, is_track_columns_updated_on 
-					FROM sys.change_tracking_tables WHERE OBJECT_NAME ( object_id ) = 'DefinitionCommand' ) ALTER TABLE dbo.DefinitionCommand ENABLE CHANGE_TRACKING ";
+					FROM sys.change_tracking_tables WHERE OBJECT_NAME ( object_id ) = 'DefinitionCommand' ) ALTER TABLE dbo.DefinitionCommand ENABLE CHANGE_TRACKING WITH(TRACK_COLUMNS_UPDATED = ON)";
 
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -196,7 +192,8 @@ namespace Conductor.Domain.Backplane.SqlServer
         {
             var sql = "IF(NOT EXISTS(SELECT * FROM sys.objects WHERE name='DefinitionCommand'))" +
                       @"CREATE TABLE [dbo].[DefinitionCommand](
-	                        [Originator] [UNIQUEIDENTIFIER] NOT NULL PRIMARY KEY,
+                            [ID] INT IDENTITY(1, 1) PRIMARY KEY,
+	                        [Originator] [UNIQUEIDENTIFIER] NOT NULL,
 	                        [DefinitionId] [NVARCHAR](100) NOT NULL,
 	                        [Version] [INT] NOT NULL
 	                        )";

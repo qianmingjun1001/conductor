@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Conductor.Domain.Interfaces;
+﻿using Conductor.Domain.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WorkflowCore.Interface;
 
-namespace Conductor.Middleware
+namespace Conductor
 {
     public static class ApplicationBuilderExtensions
     {

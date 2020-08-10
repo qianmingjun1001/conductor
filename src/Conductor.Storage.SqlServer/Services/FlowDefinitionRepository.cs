@@ -8,6 +8,7 @@ using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Conductor.Domain.Utils;
 using JetBrains.Annotations;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conductor.Storage.SqlServer.Services
@@ -86,7 +87,7 @@ namespace Conductor.Storage.SqlServer.Services
             }
         }
 
-        public async Task<List<FlowDefinition>> GetListAsync(Expression<Func<FlowDefinition, bool>> predicate = null)
+        public async Task<List<FlowDefinition>> GetListAsync(Expression<Func<FlowDefinition, bool>> predicate = null, Expression<Func<FlowDefinition, object>> select = null)
         {
             using (var context = ConstructDbContext())
             {
@@ -96,7 +97,12 @@ namespace Conductor.Storage.SqlServer.Services
                     queryable = queryable.Where(predicate);
                 }
 
-                return await queryable.ToListAsync();
+                if (select == null)
+                {
+                    return await queryable.ToListAsync();
+                }
+
+                return (await queryable.Select(select).ToListAsync()).Adapt<List<FlowDefinition>>();
             }
         }
 

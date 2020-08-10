@@ -28,7 +28,7 @@ namespace Conductor.Domain.ReplacedServices
 
             var data = (WorkflowContext) pData;
 
-            return lambda.Compile().DynamicInvoke(data, data.Payload, data.Attributes, data.Variables, Environment.GetEnvironmentVariables(), pContext);
+            return lambda.Compile().DynamicInvoke(data, data.PayloadClass, data.Attributes, data.Variables, Environment.GetEnvironmentVariables(), pContext);
         }
 
         public object EvaluateExpression(string sourceExpr, object pData, object pStep)
@@ -40,7 +40,7 @@ namespace Conductor.Domain.ReplacedServices
 
             var data = (WorkflowContext) pData;
 
-            return lambda.Compile().DynamicInvoke(data, data.Payload, data.Attributes, data.Variables, Environment.GetEnvironmentVariables(), pStep);
+            return lambda.Compile().DynamicInvoke(data, data.PayloadClass, data.Attributes, data.Variables, Environment.GetEnvironmentVariables(), pStep);
         }
 
         public object EvaluateExpression(string sourceExpr, [NotNull] IDictionary<string, object> parameteters)
@@ -62,7 +62,7 @@ namespace Conductor.Domain.ReplacedServices
 
             var args = new List<object>()
             {
-                data, data.Payload, data.Attributes, data.Variables, Environment.GetEnvironmentVariables()
+                data, data.PayloadClass, data.Attributes, data.Variables, Environment.GetEnvironmentVariables()
             };
             if (outcome != null)
             {

@@ -18,13 +18,13 @@ namespace Conductor.Domain.Scripting.ExpressionTreeTests
         [SetUp]
         public void SetUp()
         {
-            dynamic any = new ExpandoObject();
-            any.payload1 = "p1";
-            any.payload2 = "p2";
+            dynamic payload = new ExpandoObject();
+            payload.payload1 = "p1";
+            payload.payload2 = "p2";
 
             _workflowContext = new WorkflowContext()
             {
-                Any = any,
+                Payload = payload,
                 Attributes = new Dictionary<string, string>()
                 {
                     ["attr1"] = "a1",

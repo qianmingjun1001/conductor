@@ -30,7 +30,7 @@ namespace Conductor.Dtos
         {
             return new WorkflowContext()
             {
-                Any = Payload,
+                Payload = Payload,
                 Attributes = Attributes,
                 Variables = Variables
             };

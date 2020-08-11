@@ -108,10 +108,11 @@ namespace Conductor
             //定义存储
             services.UseSqlServer(Configuration["SqlServerConnectionString"]);
             //集群通知底板
-            services.UseSqlServerBackplane(Configuration["SqlServerConnectionString"]);
+            services.UseSqlServerBackplane(Configuration["SqlServerConnectionString"],
+                (serviceProvider, path) => serviceProvider.GetRequiredService<EntryPointRouteRegistry>().RegisterRoute(path));
 
             services.AddEntryPointRoute();
-            
+
             var config = new MapperConfiguration(cfg => { cfg.AddProfile<APIProfile>(); });
 
             services.AddSingleton<IMapper>(x => new Mapper(config));

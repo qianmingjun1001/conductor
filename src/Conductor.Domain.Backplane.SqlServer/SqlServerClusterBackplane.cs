@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Conductor.Domain.Interfaces;
+using Conductor.Domain.Models;
 using Conductor.Domain.Services;
 using Conductor.Domain.Utils;
 using Dapper;
@@ -19,8 +20,9 @@ namespace Conductor.Domain.Backplane.SqlServer
     {
         private readonly Guid _nodeId = Guid.NewGuid();
         private readonly string _connectionString;
-
-        private readonly IDefinitionRepository _definitionRepository;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly Action<IServiceProvider, string> _registryDynamicRouteCallback;
+        private readonly IFlowDefinitionService _flowDefinitionService;
         private readonly IWorkflowLoader _loader;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly ILogger _logger;
@@ -30,13 +32,17 @@ namespace Conductor.Domain.Backplane.SqlServer
 
         public SqlServerClusterBackplane(
             [NotNull] string connectionString,
-            [NotNull] IDefinitionRepository definitionRepository,
+            [NotNull] IServiceProvider serviceProvider,
+            [CanBeNull] Action<IServiceProvider, string> registryDynamicRouteCallback,
+            [NotNull] IFlowDefinitionService flowDefinitionService,
             [NotNull] IWorkflowLoader loader,
             [NotNull] IWorkflowRegistry workflowRegistry,
             [NotNull] ILoggerFactory logFactory)
         {
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-            _definitionRepository = definitionRepository;
+            _serviceProvider = serviceProvider;
+            _registryDynamicRouteCallback = registryDynamicRouteCallback;
+            _flowDefinitionService = flowDefinitionService;
             _loader = loader;
             _workflowRegistry = workflowRegistry;
             _logger = logFactory.CreateLogger<SqlServerClusterBackplane>();
@@ -81,16 +87,19 @@ namespace Conductor.Domain.Backplane.SqlServer
                         {
                             if (command.Originator != _nodeId)
                             {
-                                var definition = _definitionRepository.Find(command.DefinitionId, command.Version);
-                                if (definition != null)
+                                var flowDefinition = await _flowDefinitionService.GetFlowByIdAndVersion(command.DefinitionId, command.Version);
+                                if (flowDefinition != null)
                                 {
                                     if (_workflowRegistry.IsRegistered(command.DefinitionId, command.Version))
                                     {
                                         _workflowRegistry.DeregisterWorkflow(command.DefinitionId, command.Version);
                                     }
 
-                                    _loader.LoadDefinition(definition);
+                                    _loader.LoadDefinition(JsonUtils.Deserialize<Definition>(flowDefinition.Definition));
                                     _logger.LogInformation($"id: {command.DefinitionId}, version: {command.Version} definition loaded");
+
+                                    _registryDynamicRouteCallback?.Invoke(_serviceProvider, flowDefinition.EntryPointPath);
+                                    _logger.LogInformation($"Route: {flowDefinition.EntryPointPath} is registered");
                                 }
                             }
                         }

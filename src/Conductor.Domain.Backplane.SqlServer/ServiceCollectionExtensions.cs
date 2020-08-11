@@ -9,14 +9,17 @@ namespace Conductor.Domain.Backplane.SqlServer
 {
     public static class ServiceCollectionExtensions
     {
-        public static void UseSqlServerBackplane(this IServiceCollection services, [NotNull] string connectionString)
+        public static void UseSqlServerBackplane(this IServiceCollection services, [NotNull] string connectionString,
+            [CanBeNull] Action<IServiceProvider, string> registryDynamicRouteCallback)
         {
             if (connectionString == null) throw new ArgumentNullException(nameof(connectionString));
 
             services.AddSingleton<IClusterBackplane>(p =>
                 new SqlServerClusterBackplane(
                     connectionString,
-                    p.GetRequiredService<IDefinitionRepository>(),
+                    p,
+                    registryDynamicRouteCallback,
+                    p.GetRequiredService<IFlowDefinitionService>(),
                     p.GetRequiredService<IWorkflowLoader>(),
                     p.GetRequiredService<IWorkflowRegistry>(),
                     p.GetRequiredService<ILoggerFactory>())

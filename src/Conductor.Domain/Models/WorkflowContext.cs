@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Dynamic.Core;
+using System.Runtime.Serialization;
 using System.Text;
 using Conductor.Domain.Utils;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Conductor.Domain.Models
 {
@@ -21,6 +23,7 @@ namespace Conductor.Domain.Models
         /// <summary>
         /// Payload 真实类型
         /// </summary>
+        // [JsonIgnore]
         public DynamicClass PayloadClass { get; set; }
 
         /// <summary>
@@ -43,6 +46,28 @@ namespace Conductor.Domain.Models
         public Type GetPayloadType()
         {
             return Payload == null ? typeof(DynamicClass) : PayloadClass.GetType();
+        }
+
+        [OnDeserialized]
+        public void OnDeserialized(StreamingContext context)
+        {
+            if (PayloadClass == null)
+            {
+                PayloadClass = Payload?.ToDynamicClass();
+            }
+        }
+
+        [OnError]
+        public void OnError(StreamingContext context, ErrorContext errorContext)
+        {
+            //如果是无法加载匿名类型
+            if ("PayloadClass".Equals(errorContext.Member)
+                && errorContext.Error is JsonSerializationException exception
+                && exception.Path == "PayloadClass.$type")
+            {
+                PayloadClass = Payload?.ToDynamicClass();
+                errorContext.Handled = true;
+            }
         }
     }
 }

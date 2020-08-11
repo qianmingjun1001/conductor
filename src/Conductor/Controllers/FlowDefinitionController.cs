@@ -40,7 +40,7 @@ namespace Conductor.Controllers
         {
             var flowId = await _flowDefinitionService.SaveFlow(input.ToFlowDefinition());
 
-            var path = input.EntryPoint?.Path;
+            var path = input.ConsumerStep?.Inputs?["path"];
             if (!string.IsNullOrEmpty(path))
             {
                 _entryPointRouteRegistry.RegisterRoute(path);

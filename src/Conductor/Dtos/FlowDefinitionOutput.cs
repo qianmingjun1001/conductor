@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Conductor.Domain.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Conductor.Dtos
 {
@@ -13,7 +14,7 @@ namespace Conductor.Dtos
         /// <summary>
         /// 流程 id
         /// </summary>
-        public int FlowId { get; set; }
+        public Guid FlowId { get; set; }
 
         /// <summary>
         /// 流程名称
@@ -23,12 +24,12 @@ namespace Conductor.Dtos
         /// <summary>
         /// 工作流定义
         /// </summary>
-        public Definition Definition { get; set; }
+        public JObject Definition { get; set; }
 
         /// <summary>
         /// 入口点
         /// </summary>
-        public EntryPoint EntryPoint { get; set; }
+        public EntryPoint ConsumerStep { get; set; }
 
         /// <summary>
         /// 创建时间

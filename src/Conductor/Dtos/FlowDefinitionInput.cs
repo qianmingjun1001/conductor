@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.Serialization;
 using System.Text;
 using Conductor.Domain.Entities;
 using Conductor.Domain.Models;
 using Conductor.Domain.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Conductor.Dtos
 {
@@ -29,12 +32,13 @@ namespace Conductor.Dtos
         /// 工作流定义
         /// </summary>
         [Required]
-        public Definition Definition { get; set; }
+        public JObject Definition { get; set; }
 
         /// <summary>
         /// 入口点
         /// </summary>
-        public EntryPoint EntryPoint { get; set; }
+        [Required]
+        public EntryPoint ConsumerStep { get; set; }
 
         public FlowDefinition ToFlowDefinition()
         {
@@ -43,11 +47,11 @@ namespace Conductor.Dtos
                 FlowId = FlowId,
                 FlowName = FlowName,
                 Definition = JsonUtils.Serialize(Definition),
-                DefinitionId = Definition.Id,
-                DefinitionVersion = Definition.Version,
-                Description = Definition.Description,
-                EntryPoint = JsonUtils.Serialize(EntryPoint),
-                EntryPointPath = EntryPoint?.Path
+                DefinitionId = Definition["id"].ToObject<string>(),
+                DefinitionVersion = Definition["version"].ToObject<int>(),
+                Description = Definition["description"].ToObject<string>(),
+                EntryPoint = JsonUtils.Serialize(ConsumerStep),
+                EntryPointPath = ConsumerStep?.Inputs?["path"]
             };
         }
     }

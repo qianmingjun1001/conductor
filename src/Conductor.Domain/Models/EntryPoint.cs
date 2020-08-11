@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace Conductor.Domain.Models
 {
@@ -7,15 +9,17 @@ namespace Conductor.Domain.Models
     /// </summary>
     public class EntryPoint : BaseStepDescription
     {
+        public string Id { get; set; }
+
         /// <summary>
         /// 入口点名称
         /// </summary>
         public string Name { get; set; }
-        
-        /// <summary>
-        /// 入口点路径
-        /// </summary>
-        [MaxLength(100)]
-        public string Path { get; set; }
+
+        public string StepType { get; set; }
+
+        public string NextStepId { get; set; }
+
+        public IDictionary<string, string> Inputs { get; set; }
     }
 }

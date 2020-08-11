@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WorkflowCore.Interface;
@@ -12,7 +13,7 @@ namespace Conductor.Steps
 
         public string Message { get; set; }
 
-        public LogLevel Level { get; set; } = LogLevel.Information;
+        public LogLevel Level { get; set; } = LogLevel.Warning;
 
         public EmitLog(ILoggerFactory loggerFactory)
         {
@@ -22,7 +23,7 @@ namespace Conductor.Steps
         public override Task<ExecutionResult> RunAsync(IStepExecutionContext context)
         {
             var logger = _loggerFactory.CreateLogger(context.Workflow.WorkflowDefinitionId);
-            logger.Log(Level, default(EventId), Message, null, (state, ex) => state);
+            logger.Log(Level, default, $"threadId: {Thread.CurrentThread.ManagedThreadId}, message: {Message}", null, (state, ex) => state);
             return Task.FromResult(ExecutionResult.Next());
         }
     }

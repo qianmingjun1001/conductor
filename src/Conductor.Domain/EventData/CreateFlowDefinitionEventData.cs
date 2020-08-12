@@ -13,14 +13,21 @@ namespace Conductor.Domain.EventData
         /// 
         /// </summary>
         /// <param name="definition"></param>
-        public CreateFlowDefinitionEventData([NotNull] Definition definition)
+        /// <param name="entryPointPath"></param>
+        public CreateFlowDefinitionEventData([NotNull] Definition definition, string entryPointPath)
         {
             Definition = definition;
+            EntryPointPath = entryPointPath;
         }
 
         /// <summary>
         /// 流程定义
         /// </summary>
         public Definition Definition { get; }
+
+        /// <summary>
+        /// 入口点
+        /// </summary>
+        public string EntryPointPath { get; }
     }
 }

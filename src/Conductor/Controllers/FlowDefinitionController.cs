@@ -18,16 +18,13 @@ namespace Conductor.Controllers
     {
         private readonly IFlowDefinitionService _flowDefinitionService;
         private readonly IMapper _mapper;
-        private readonly EntryPointRouteRegistry _entryPointRouteRegistry;
 
         public FlowDefinitionController(
             [NotNull] IFlowDefinitionService flowDefinitionService,
-            [NotNull] IMapper mapper,
-            [NotNull] EntryPointRouteRegistry entryPointRouteRegistry)
+            [NotNull] IMapper mapper)
         {
             _flowDefinitionService = flowDefinitionService;
             _mapper = mapper;
-            _entryPointRouteRegistry = entryPointRouteRegistry;
         }
 
         /// <summary>
@@ -39,12 +36,6 @@ namespace Conductor.Controllers
         public async Task<ApiResult<Guid>> Post([NotNull] [FromBody] FlowDefinitionInput input)
         {
             var flowId = await _flowDefinitionService.SaveFlow(input.ToFlowDefinition());
-
-            var path = input.ConsumerStep?.Inputs?["path"];
-            if (!string.IsNullOrEmpty(path))
-            {
-                _entryPointRouteRegistry.RegisterRoute(path);
-            }
 
             return ApiResult<Guid>.True(flowId);
         }

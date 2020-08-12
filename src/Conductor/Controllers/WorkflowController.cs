@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Conductor.Auth;
+using Conductor.Domain.Entities;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Conductor.Dtos;
@@ -55,18 +56,18 @@ namespace Conductor.Controllers
         }
 
         /// <summary>
-        /// 通过工作流定义的id开启工作流
+        /// 通过工作流定义的flowId开启工作流
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="flowId"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        [HttpPost("{id}")]
+        [HttpPost("{flowId}")]
         [Authorize(Policy = Policies.Controller)]
-        public async Task<ApiResult<WorkflowInstance>> Post(string id, [FromBody] WorkflowContextDto data)
+        public async Task<ApiResult<WorkflowInstance>> Post(Guid flowId, [FromBody] WorkflowContextDto data)
         {
-            await CheckWorkflowDefinition(id);
+            var definition = await CheckWorkflowDefinition(flowId);
 
-            var instanceId = await _workflowController.StartWorkflow(id, data.ToWorkflowContext());
+            var instanceId = await _workflowController.StartWorkflow(definition.DefinitionId, data.ToWorkflowContext());
             var result = await _persistenceProvider.GetWorkflowInstance(instanceId);
 
             return ApiResult<WorkflowInstance>.True(_mapper.Map<WorkflowInstance>(result));
@@ -75,30 +76,33 @@ namespace Conductor.Controllers
         /// <summary>
         /// 通过工作流定义的id和版本开启工作流
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="flowId"></param>
         /// <param name="version"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        [HttpPost("{id}/{version}")]
+        [HttpPost("{flowId}/{version}")]
         [Authorize(Policy = Policies.Controller)]
-        public async Task<ApiResult<WorkflowInstance>> Post(string id, int version, [FromBody] WorkflowContextDto data)
+        public async Task<ApiResult<WorkflowInstance>> Post(Guid flowId, int version, [FromBody] WorkflowContextDto data)
         {
-            await CheckWorkflowDefinition(id, version);
+            var definition = await CheckWorkflowDefinition(flowId, version);
 
-            var instanceId = await _workflowController.StartWorkflow(id, version, data.ToWorkflowContext());
+            var instanceId = await _workflowController.StartWorkflow(definition.DefinitionId, definition.DefinitionVersion, data.ToWorkflowContext());
             var result = await _persistenceProvider.GetWorkflowInstance(instanceId);
 
             return ApiResult<WorkflowInstance>.True(_mapper.Map<WorkflowInstance>(result));
         }
 
         //验证工作流定义是否存在
-        private async Task CheckWorkflowDefinition(string id, int? version = null)
+        private async Task<FlowDefinition> CheckWorkflowDefinition(Guid flowId, int? version = null)
         {
-            var definition = await _flowDefinitionService.GetFlowByIdAndVersion(id, version);
-            if (definition == null)
+            var definition = await _flowDefinitionService.GetFlow(flowId);
+
+            if (definition == null || (version.HasValue && definition.DefinitionVersion != version.Value))
             {
-                throw new InvalidOperationException($"id: {id}, version: {version} 的工作流定义不存在");
+                throw new InvalidOperationException($"flowId: {flowId}, version: {version} 的工作流定义不存在");
             }
+
+            return definition;
         }
 
         /// <summary>

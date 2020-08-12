@@ -29,6 +29,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.6" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.5.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="5.5.1" />
     <PackageReference Include="WorkflowCore" Version="3.1.6" />
     <PackageReference Include="WorkflowCore.LockProviders.SqlServer" Version="2.0.0" />
     <PackageReference Include="WorkflowCore.Persistence.SqlServer" Version="3.1.0" />

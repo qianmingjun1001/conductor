@@ -26,8 +26,8 @@ namespace Conductor.DynamicRoute
 
             EnsuredInitialized();
 
-            var p = pattern.ToLower();
-            if (_patterns.Exists(q => q == p))
+            var temp = pattern.ToLower();
+            if (_patterns.Exists(p => p == temp))
             {
                 return;
             }
@@ -36,7 +36,7 @@ namespace Conductor.DynamicRoute
             routeBuilder.DisplayName = $"[EntryPoint: {pattern}]";
             DataSource.AddEndpoint(routeBuilder.Build());
 
-            _patterns.Add(p);
+            _patterns.Add(temp);
         }
 
         private void EnsuredInitialized()

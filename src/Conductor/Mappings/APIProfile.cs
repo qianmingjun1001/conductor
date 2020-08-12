@@ -34,7 +34,7 @@ namespace Conductor.Mappings
             //映射
             CreateMap<FlowDefinition, FlowDefinitionOutput>()
                 .ForMember(dest => dest.Definition, opt => opt.MapFrom(src => JObject.Parse(src.Definition)))
-                .ForMember(dest => dest.ConsumerStep, opt => opt.MapFrom(src => JsonUtils.Deserialize<EntryPoint>(src.EntryPoint)));
+                .ForMember(dest => dest.EntryPoint, opt => opt.MapFrom(src => JsonUtils.Deserialize<EntryPoint>(src.EntryPoint)));
         }
     }
 }

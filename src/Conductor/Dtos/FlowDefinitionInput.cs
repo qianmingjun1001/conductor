@@ -38,7 +38,8 @@ namespace Conductor.Dtos
         /// 入口点
         /// </summary>
         [Required]
-        public EntryPoint ConsumerStep { get; set; }
+        [JsonProperty(PropertyName = "consumerStep")]
+        public EntryPoint EntryPoint { get; set; }
 
         public FlowDefinition ToFlowDefinition()
         {
@@ -50,8 +51,8 @@ namespace Conductor.Dtos
                 DefinitionId = Definition["id"].ToObject<string>(),
                 DefinitionVersion = Definition["version"].ToObject<int>(),
                 Description = Definition["description"].ToObject<string>(),
-                EntryPoint = JsonUtils.Serialize(ConsumerStep),
-                EntryPointPath = ConsumerStep?.Inputs?["path"]
+                EntryPoint = JsonUtils.Serialize(EntryPoint),
+                EntryPointPath = EntryPoint?.Inputs?["path"]
             };
         }
     }

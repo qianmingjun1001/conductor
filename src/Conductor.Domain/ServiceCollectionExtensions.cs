@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.ReplacedServices;
 using Conductor.Domain.Services;
@@ -22,7 +23,7 @@ namespace Conductor.Domain
             services.AddTransient<CustomStep>();
 
             services.AddSingleton<IFlowDefinitionService, FlowDefinitionService>();
-            services.AddMediatR(typeof(ServiceCollectionExtensions));
+            services.AddMediatR(Assembly.GetEntryAssembly(), typeof(ServiceCollectionExtensions).Assembly);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Conductor.Domain.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Conductor.Dtos
@@ -29,7 +30,8 @@ namespace Conductor.Dtos
         /// <summary>
         /// 入口点
         /// </summary>
-        public EntryPoint ConsumerStep { get; set; }
+        [JsonProperty(PropertyName = "consumerStep")]
+        public EntryPoint EntryPoint { get; set; }
 
         /// <summary>
         /// 创建时间

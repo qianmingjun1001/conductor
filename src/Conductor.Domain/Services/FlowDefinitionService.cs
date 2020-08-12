@@ -43,12 +43,14 @@ namespace Conductor.Domain.Services
                     throw new InvalidOperationException($"已存在 id: {entity.DefinitionId}, version: {entity.DefinitionVersion} 的工作流定义");
                 }
 
-                await _mediator.Publish(new CreateFlowDefinitionEventData(definition));
+                await _mediator.Publish(new CreateFlowDefinitionEventData(definition, entity.EntryPointPath));
                 return await _flowDefinitionRepository.InsertAsync(entity);
             }
 
             //update
             item = await GetFlow(entity.FlowId);
+            var oldEntryPointPath = item.EntryPointPath;
+
             item.FlowName = entity.FlowName;
             item.Definition = entity.Definition;
             item.DefinitionId = entity.DefinitionId;
@@ -57,7 +59,7 @@ namespace Conductor.Domain.Services
             item.EntryPoint = entity.EntryPoint;
             item.EntryPointPath = entity.EntryPointPath;
 
-            await _mediator.Publish(new UpdateFlowDefinitionEventData(definition));
+            await _mediator.Publish(new UpdateFlowDefinitionEventData(definition, oldEntryPointPath, entity.EntryPointPath));
             await _flowDefinitionRepository.UpdateAsync(item);
             return entity.FlowId;
         }

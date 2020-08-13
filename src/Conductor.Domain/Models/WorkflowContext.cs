@@ -6,6 +6,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using Conductor.Domain.Utils;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace Conductor.Domain.Models
@@ -15,16 +16,18 @@ namespace Conductor.Domain.Models
     /// </summary>
     public class WorkflowContext
     {
+        private DynamicClass _payloadClass;
+
         /// <summary>
         /// Payload
         /// </summary>
-        public ExpandoObject Payload { get; set; }
+        public JObject Payload { get; set; }
 
         /// <summary>
         /// Payload 真实类型
         /// </summary>
-        // [JsonIgnore]
-        public DynamicClass PayloadClass { get; set; }
+        [JsonIgnore]
+        public DynamicClass PayloadClass => _payloadClass = _payloadClass ?? Payload?.ToDynamicClass();
 
         /// <summary>
         /// 属性
@@ -46,28 +49,6 @@ namespace Conductor.Domain.Models
         public Type GetPayloadType()
         {
             return Payload == null ? typeof(DynamicClass) : PayloadClass.GetType();
-        }
-
-        [OnDeserialized]
-        public void OnDeserialized(StreamingContext context)
-        {
-            if (PayloadClass == null)
-            {
-                PayloadClass = Payload?.ToDynamicClass();
-            }
-        }
-
-        [OnError]
-        public void OnError(StreamingContext context, ErrorContext errorContext)
-        {
-            //如果是无法加载匿名类型
-            if ("PayloadClass".Equals(errorContext.Member)
-                && errorContext.Error is JsonSerializationException exception
-                && exception.Path == "PayloadClass.$type")
-            {
-                PayloadClass = Payload?.ToDynamicClass();
-                errorContext.Handled = true;
-            }
         }
     }
 }

@@ -4,62 +4,63 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
 
 namespace Conductor.Domain.Utils
 {
-    public static class ExpandoObjectExtension
+    public static class JObjectExtension
     {
-        public static DynamicClass ToDynamicClass(this ExpandoObject expandoObject)
+        public static DynamicClass ToDynamicClass(this JObject jObject)
         {
-            if (expandoObject == null)
-            {
-                return null;
-            }
+            if (jObject == null) return null;
 
-            return GenerateDynamicClass(expandoObject).dynamicClass;
+            return GenerateDynamicClass(jObject).dynamicClass;
         }
 
-        private static (Type dynamicType, DynamicClass dynamicClass) GenerateDynamicClass(ExpandoObject expandoObject)
+        private static (Type dynamicType, DynamicClass dynamicClass) GenerateDynamicClass(JObject jObject)
         {
             var props = new List<DynamicProperty>();
             var propValues = new Dictionary<string, object>();
 
-            foreach (var pair in expandoObject)
+            foreach (var pair in jObject)
             {
                 var key = pair.Key;
                 var value = pair.Value;
-                var valueType = value?.GetType();
-                if (value is ExpandoObject)
+
+                var valueType = GetJTokenType(value);
+                if (value is JObject o)
                 {
-                    var (dynamicType, dynamicClass) = GenerateDynamicClass((ExpandoObject) value);
+                    var (dynamicType, dynamicClass) = GenerateDynamicClass(o);
                     props.Add(new DynamicProperty(key, dynamicType));
                     propValues.Add(key, dynamicClass);
                 }
-                else if (!(value is string) && value is IEnumerable items)
+                else if (value is JArray array)
                 {
-                    if (AllIsExpandoObject(items))
+                    //如果是数组，需要保证所有元素都是一致的，否则不做处理
+                    if (AllIsJObject(array))
                     {
                         Type elementType = null;
-                        //这里默认数组下面的 ExpandoObject 的格式都是一致的，如果不一致这里会报错
                         var list = new List<DynamicClass>();
-                        foreach (var expando in items.Cast<ExpandoObject>())
+                        foreach (var item in array.Cast<JObject>())
                         {
-                            if (expando == null)
+                            if (item == null)
                             {
                                 list.Add(null);
                                 continue;
                             }
 
-                            var (dynamicType, dynamicClass) = GenerateDynamicClass(expando);
+                            var (dynamicType, dynamicClass) = GenerateDynamicClass(item);
                             elementType = elementType ?? dynamicType;
                             list.Add(dynamicClass);
                         }
 
                         props.Add(new DynamicProperty(key, typeof(List<>).MakeGenericType(elementType)));
 
-                        var castMethod = typeof(ExpandoObjectExtension).GetMethod(nameof(Cast)).MakeGenericMethod(typeof(DynamicClass), elementType);
+                        var castMethod = typeof(JObjectExtension).GetMethod(nameof(Cast), BindingFlags.NonPublic | BindingFlags.Static)
+                            .MakeGenericMethod(typeof(DynamicClass), elementType);
                         propValues.Add(key, castMethod.Invoke(null, new object[] {list}));
                     }
                     else
@@ -71,7 +72,7 @@ namespace Conductor.Domain.Utils
                 else
                 {
                     props.Add(new DynamicProperty(key, valueType ?? typeof(object)));
-                    propValues.Add(key, value);
+                    propValues.Add(key, value.ToObject(valueType));
                 }
             }
 
@@ -85,11 +86,36 @@ namespace Conductor.Domain.Utils
             return (type, clazz);
         }
 
-        private static bool AllIsExpandoObject(IEnumerable source)
+        private static Type GetJTokenType(JToken jToken)
         {
-            foreach (var item in source)
+            switch (jToken.Type)
             {
-                if (item != null && item.GetType() != typeof(ExpandoObject))
+                case JTokenType.Integer:
+                    return typeof(int);
+                case JTokenType.Float:
+                    return typeof(float);
+                case JTokenType.String:
+                    return typeof(string);
+                case JTokenType.Boolean:
+                    return typeof(bool);
+                case JTokenType.Date:
+                    return typeof(DateTime);
+                case JTokenType.Bytes:
+                    return typeof(byte[]);
+                case JTokenType.Guid:
+                    return typeof(Guid);
+                case JTokenType.TimeSpan:
+                    return typeof(TimeSpan);
+                default:
+                    return jToken.GetType();
+            }
+        }
+
+        private static bool AllIsJObject(JArray jArray)
+        {
+            foreach (var item in jArray)
+            {
+                if (item != null && item.GetType() != typeof(JObject))
                 {
                     return false;
                 }

@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.Text;
 using Conductor.Domain.Models;
 using Conductor.Domain.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Conductor.Dtos
 {
@@ -15,7 +16,7 @@ namespace Conductor.Dtos
         /// <summary>
         /// Payload
         /// </summary>
-        public ExpandoObject Payload { get; set; }
+        public JObject Payload { get; set; }
 
         /// <summary>
         /// 属性
@@ -33,7 +34,6 @@ namespace Conductor.Dtos
             if (Payload != null)
             {
                 context.Payload = Payload;
-                context.PayloadClass = Payload.ToDynamicClass();
             }
 
             if (Attributes != null)

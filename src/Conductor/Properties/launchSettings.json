@@ -19,7 +19,7 @@
     },
     "Conductor": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "api/info",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

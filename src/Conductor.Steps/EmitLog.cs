@@ -11,7 +11,7 @@ namespace Conductor.Steps
     {
         private readonly ILoggerFactory _loggerFactory;
 
-        public string Message { get; set; }
+        public object Message { get; set; }
 
         public LogLevel Level { get; set; } = LogLevel.Warning;
 

@@ -30,7 +30,8 @@ namespace Conductor.Domain.Utils
                 var key = pair.Key;
                 var value = pair.Value;
 
-                var valueType = GetJTokenType(value);
+                var valueType = GetJTokenType(value) ?? typeof(object);
+
                 if (value is JObject o)
                 {
                     var (dynamicType, dynamicClass) = GenerateDynamicClass(o);
@@ -39,39 +40,11 @@ namespace Conductor.Domain.Utils
                 }
                 else if (value is JArray array)
                 {
-                    //如果是数组，需要保证所有元素都是一致的，否则不做处理
-                    if (AllIsJObject(array))
-                    {
-                        Type elementType = null;
-                        var list = new List<DynamicClass>();
-                        foreach (var item in array.Cast<JObject>())
-                        {
-                            if (item == null)
-                            {
-                                list.Add(null);
-                                continue;
-                            }
-
-                            var (dynamicType, dynamicClass) = GenerateDynamicClass(item);
-                            elementType = elementType ?? dynamicType;
-                            list.Add(dynamicClass);
-                        }
-
-                        props.Add(new DynamicProperty(key, typeof(List<>).MakeGenericType(elementType)));
-
-                        var castMethod = typeof(JObjectExtension).GetMethod(nameof(Cast), BindingFlags.NonPublic | BindingFlags.Static)
-                            .MakeGenericMethod(typeof(DynamicClass), elementType);
-                        propValues.Add(key, castMethod.Invoke(null, new object[] {list}));
-                    }
-                    else
-                    {
-                        props.Add(new DynamicProperty(key, valueType));
-                        propValues.Add(key, value);
-                    }
+                    GenerateArray(key, array, props, propValues);
                 }
                 else
                 {
-                    props.Add(new DynamicProperty(key, valueType ?? typeof(object)));
+                    props.Add(new DynamicProperty(key, valueType));
                     propValues.Add(key, value.ToObject(valueType));
                 }
             }
@@ -84,6 +57,56 @@ namespace Conductor.Domain.Utils
             }
 
             return (type, clazz);
+        }
+
+        private static void GenerateArray(string key, JArray value, List<DynamicProperty> props, Dictionary<string, object> propValues)
+        {
+            var list = new List<object>();
+            foreach (var item in value)
+            {
+                if (item is JObject o)
+                {
+                    var (_, dynamicClass) = GenerateDynamicClass(o);
+                    list.Add(dynamicClass);
+                }
+                else if (item is JArray array)
+                {
+                    list.Add(array);
+                }
+                else
+                {
+                    list.Add(item.ToObject(GetJTokenType(item)));
+                }
+            }
+
+            //list 中类型都一致时返回 ElementType，否则返回 null
+            var elementType = GetElementType(list);
+            if (elementType == null)
+            {
+                props.Add(new DynamicProperty(key, typeof(List<object>)));
+                propValues.Add(key, list);
+            }
+            else
+            {
+                props.Add(new DynamicProperty(key, typeof(List<>).MakeGenericType(elementType)));
+                var castMethod = CastMethod.MakeGenericMethod(typeof(object), elementType);
+                propValues.Add(key, castMethod.Invoke(null, new object[] {list}));
+            }
+        }
+
+        private static Type GetElementType(List<object> list)
+        {
+            object first = null;
+            foreach (var item in list)
+            {
+                first = first ?? item;
+                if (first?.GetType() != item?.GetType())
+                {
+                    return null;
+                }
+            }
+
+            return first?.GetType();
         }
 
         private static Type GetJTokenType(JToken jToken)
@@ -106,23 +129,16 @@ namespace Conductor.Domain.Utils
                     return typeof(Guid);
                 case JTokenType.TimeSpan:
                     return typeof(TimeSpan);
+                case JTokenType.None:
+                case JTokenType.Null:
+                case JTokenType.Undefined:
+                    return null;
                 default:
                     return jToken.GetType();
             }
         }
 
-        private static bool AllIsJObject(JArray jArray)
-        {
-            foreach (var item in jArray)
-            {
-                if (item != null && item.GetType() != typeof(JObject))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        private static readonly MethodInfo CastMethod = typeof(JObjectExtension).GetMethod(nameof(Cast), BindingFlags.NonPublic | BindingFlags.Static);
 
         private static List<TResult> Cast<TSource, TResult>(IEnumerable<TSource> sources)
         {
